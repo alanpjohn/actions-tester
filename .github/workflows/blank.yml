@@ -1,0 +1,52 @@
+name: Bump Helm Chart Version
+
+on:
+  push:
+    branches:
+      - main
+permissions:
+  contents: write
+
+jobs:
+  check-and-bump-chart:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 2  # Fetch last 2 commits for comparison
+
+      - name: Check if Chart.yaml was modified
+        id: check_chart
+        run: |
+          if git diff --name-only HEAD^ HEAD | grep -q "chart.yaml"; then
+            echo "chart.yaml was modified."
+            echo "CHART_MODIFIED=true" >> $GITHUB_ENV
+          else
+            echo "chart.yaml was NOT modified."
+            echo "CHART_MODIFIED=false" >> $GITHUB_ENV
+          fi
+
+      - name: Get current Helm Chart version
+        if: env.CHART_MODIFIED == 'false'
+        id: get_version
+        run: |
+          VERSION=$(yq '.version' chart.yaml)
+          NEW_VERSION=$(echo $VERSION | awk -F. '{print $1"."$2"."$3+1}')
+          echo "Current version: $VERSION"
+          echo "New version: $NEW_VERSION"
+          echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
+
+      - name: Bump Helm Chart version
+        if: env.CHART_MODIFIED == 'false'
+        run: |
+          yq e -i '.version = "${{ env.NEW_VERSION }}"' chart.yaml
+
+      - name: Commit and push if changed
+        if: env.CHART_MODIFIED == 'false'
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions@github.com"
+          git add chart.yaml
+          git commit -m "ci: bump Helm chart version to ${{ env.NEW_VERSION }}"
+          git push origin main
