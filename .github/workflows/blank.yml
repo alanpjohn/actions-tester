@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+
 permissions:
   contents: write
 
@@ -50,3 +51,24 @@ jobs:
           git add chart.yaml
           git commit -m "ci: bump Helm chart version to ${{ env.NEW_VERSION }}"
           git push origin main
+
+  check-tag:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Fetch tags
+        run: git fetch --tags
+
+      - name: Compare latest tag with current commit
+        run: |
+          latest_tag=$(git describe --tags --abbrev=0)
+          tag_commit=$(git rev-list -n 1 "$latest_tag")
+          current_commit=$(git rev-parse HEAD)
+
+          if [ "$current_commit" = "$tag_commit" ]; then
+            echo "Latest tag '$latest_tag' matches the current commit."
+          else
+            echo "Latest tag '$latest_tag' does not match the current commit."
+          fi
