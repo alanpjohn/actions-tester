@@ -1,0 +1,25 @@
+name: PR Preview
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  id-token: write
+  contents: read
+  pull-requests: write
+
+jobs:
+  pr-preview:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          message: |
+            Release ${{ github.sha }} to <https://pr-${{ github.event.number }}.example.com>
