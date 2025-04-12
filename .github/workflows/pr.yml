@@ -21,7 +21,5 @@ jobs:
 
       - uses: marocchino/sticky-pull-request-comment@v2
         with:
-          header: "PR Preview"
-          recreate: true
           message: |
             Release ${{ github.sha }} to <https://pr-${{ github.event.number }}.example.com>
